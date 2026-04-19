@@ -11,8 +11,7 @@ function LoginScreen({ navigation }) {
   const [isLogin, setIsLogin] = useState(true); // Permet de basculer entre Connexion et Inscription
 
   // ⚠️ IMPORTANT : REMPLACE CETTE URL PAR TON LIEN NGROK ! (sans le / à la fin)
-  const API_URL = "https://TON-LIEN-NGROK-ICI.ngrok-free.app"; 
-
+  const API_URL = "https://gumminess-unbaked-primary.ngrok-free.dev";
   const handleAuth = async () => {
     if (!email || !password) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs.");
@@ -24,10 +23,14 @@ function LoginScreen({ navigation }) {
 
     try {
       // On envoie la requête au serveur
+      // Dans App.js, vérifie cette partie :
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ 
+          email: email.trim(), // On enlève les espaces inutiles
+          password: password 
+        })
       });
       
       const data = await response.json();

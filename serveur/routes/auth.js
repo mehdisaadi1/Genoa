@@ -15,8 +15,14 @@ router.post('/register', async (req, res) => {
         const role = userCount === 0 ? 'admin' : 'lecteur';
         const isApproved = userCount === 0 ? true : false; // L'admin s'auto-approuve
 
-        const newUser = new User({ email, password, role, isApproved });
-        await newUser.save();
+        // Dans serveur/routes/auth.js (route /register)
+        const newUser = new User({
+            nom: req.body.nom || "Utilisateur Test", // On ajoute un nom par défaut ici
+            email: req.body.email,
+            password: req.body.password,
+            role: isFirstUser ? 'admin' : 'lecteur',
+            isApproved: isFirstUser
+        });        await newUser.save();
 
         res.status(201).json({ message: "Utilisateur créé avec succès. En attente de validation par un admin." });
     } catch (error) {
