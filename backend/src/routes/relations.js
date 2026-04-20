@@ -5,6 +5,8 @@ const authMiddleware = require('../middlewares/auth');
 
 router.use(authMiddleware(['Admin', 'Editor', 'Reader']));
 
+router.get('/', authMiddleware(['Admin', 'Editor', 'Reader']), relationController.getAllRelations);
+
 // Relations (Parent-Child)
 router.post('/parent-child', authMiddleware(['Admin', 'Editor']), relationController.createParentChild);
 router.delete('/parent-child/:id', authMiddleware(['Admin', 'Editor']), relationController.deleteParentChild);

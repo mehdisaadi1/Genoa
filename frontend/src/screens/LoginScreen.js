@@ -1,17 +1,21 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
+    setErrorMsg('');
     try {
       await login(email, password);
     } catch (err) {
-      Alert.alert('Erreur', err.response?.data?.error || 'Erreur de connexion');
+      const msg = err.response?.data?.error || 'Erreur de connexion';
+      setErrorMsg(msg);
+      if (Platform.OS === 'web') window.alert(msg);
     }
   };
 
@@ -20,6 +24,8 @@ export default function LoginScreen({ navigation }) {
       <Text style={styles.title}>Genoa</Text>
       <Text style={styles.subtitle}>Arbre Généalogique</Text>
       
+      {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -54,7 +60,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F7FA', // Light blue-ish gray
+    backgroundColor: '#F5F7FA',
     padding: 20,
   },
   title: {
@@ -66,7 +72,13 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     color: '#7F8C8D',
-    marginBottom: 40,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#E74C3C',
+    marginBottom: 20,
+    fontWeight: 'bold',
+    textAlign: 'center'
   },
   inputContainer: {
     width: '100%',

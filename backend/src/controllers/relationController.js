@@ -29,6 +29,16 @@ async function hasCycle(startChildId, potentialParentId) {
   return false;
 }
 
+exports.getAllRelations = async (req, res) => {
+  try {
+    const parentChildren = await prisma.relation.findMany();
+    const couples = await prisma.couple.findMany();
+    res.json({ parentChildren, couples });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.createParentChild = async (req, res) => {
   try {
     const { parentId, childId, type } = req.body;

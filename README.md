@@ -1,50 +1,63 @@
 # 🌳 Genoa - Application d'Arbre Généalogique Intelligent
 
 ## 🎯 Introduction
-Genoa est une application de gestion avancée d’arbre généalogique familial réalisée dans le cadre du projet *Développement d'applications pour terminaux mobiles* (ENSEIRB-MATMECA).
-L'objectif est de permettre de construire, visualiser et analyser dynamiquement un arbre généalogique via une interface mobile sécurisée.
+Genoa est une application de gestion avancée d’arbre généalogique familial réalisée dans le cadre du projet **Développement d'applications pour terminaux mobiles** . 
 
-> **Note Pédagogique** : J'ai réalisé ce projet de manière individuelle. Afin de couvrir l'ensemble des contraintes, j'ai opté pour une architecture minimaliste mais redoutablement efficace : Node.js/Express, SQLite piloté via Prisma, et une application Expo (React Native).
+L'objectif est de permettre à une famille de construire, visualiser et analyser dynamiquement son arbre généalogique via une interface interactive sur mobile. Le projet suit une architecture stricte client-serveur.
 
-## 🧩 Fonctionnalités & Auteur
-*Étant seul sur ce projet, toutes les fonctionnalités ont été pensées et codées par* **Mehdi**.
+*Projet réalisé individuellement.*
 
-- [x] **Inscription & Authentification** : JWT valide 24h, premier inscrit automatiquement Admin.
-- [x] **Gestion des utilisateurs** : Validation d'inscription et promotion de rôles par les Administrateurs.
-- [x] **Gestion des membres** : CRUD complet de nœuds (nom, sexe, dates...).
-- [x] **Gestion des relations** : Ajouts de couples et de liaisons Parent-Enfant, prévention anti-cycles avec l'algorithme "hasCycle".
-- [x] **Visualisation de l'arbre** : Affichage interactif avec D3.js hébergé dans une `WebView` au sein du client React Native.
-- [x] **Recherche & Navigation** : Formulaire multicritères (nom, prénom) pour accéder aux données.
-- [x] **Statistiques familiales** : Calcul dynamique de la répartition hommes/femmes et de l'espérance de vie.
-- [x] **Confidentialité et Synchronisation** : Intégration de vérifications de rôles, de flags `isPrivate`, et de synchronisations temps-réél + verrous sur **Socket.IO**.
+---
 
-## 🚀 Installation & Lancement Rapide
+## 🧩 Fonctionnalités Implémentées & Répartition (Auteurs)
 
-Assurez-vous de posséder **Node.js** v16+.
+Puisque ce projet initialement prévu en binôme a été réalisé seul, toutes les fonctionnalités ont été développées et committées par Mehdi SAADI (GitHub : `mehdisaadi1`).
 
-### 1️⃣ Lancement du Backend (API REST)
-\`\`\`bash
+| Fonctionnalité / Tâche | Description de l'implémentation | Auteur |
+|-------------------------|--------------------------------|--------|
+| **Base de Données & Architecture** | Création du serveur Express et paramétrage de SQLite via **Prisma ORM**. Schémas de DB `User`, `Member`, `Relation`, et `Couple`. | Mehdi SAADI |
+| **Authentification & Sécurité** | Inscription, Connexion, Hashage des mots de passe (bcrypt) et émission de JWT (validité 24h). | Mehdi SAADI |
+| **Gestion des Rôles (Admin)** | Création d'un Panel Administrateur (`AdminScreen`). Validation manuelle des nouveaux comptes (Lecteurs) et promotion en Éditeurs. | Mehdi SAADI |
+| **Arbre et Graphe Interactif** | Affichage interactif avec Zoom. Injection native de **D3.js** (Force-Directed Graph) au sein d'une `WebView` React Native pour des calculs fluides de répulsion physique inter-membres. | Mehdi SAADI |
+| **Système de Membres (CRUD)** | Formulaire dynamique (`MemberFormScreen`) permettant d'ajouter, modifier et gérer les membres. (Logique relationnelle prête côté base de données). | Mehdi SAADI |
+| **Moteur de Recherche** | Écran mobile de recherche avec filtrage direct via API multicritères. | Mehdi SAADI |
+| **Statistiques Dynamiques** | Génération de calculs mathématiques (Répartition Hommes/Femmes et Espérance de vie globale) via l'API, restitués sur l'écran Stats. | Mehdi SAADI |
+| **Prévention des Conflits (Temps Réel)** | Conception de la mécanique de blocage de session et verrouillage de membres en direct avec **Socket.IO**. | Mehdi SAADI |
+
+---
+
+## 🚀 Installation & Lancement Rapide (Démonstration)
+
+Afin de pouvoir réaliser la démonstration de 15 minutes, l'environnement nécessite l'ouverture de deux terminaux locaux.
+
+### 1️⃣ Initialisation de l'API REST (Backend)
+```bash
 cd backend
 npm install
-# La base de données SQLite (dev.db) est utilisée par défaut.
-# Initialiser avec quelques membres fictifs de démonstration :
+npx prisma generate
+npx prisma db push --accept-data-loss
+
+# Initialiser l'arbre de test "Famille Dupont" (Recommandé) :
 node seed.js
 
-# Lancer en mode dev
+# Démarrer le serveur HTTP et Socket.io (Port 3000)
 npm run dev
-\`\`\`
-Le serveur va tourner sur `http://localhost:3000`. 
-*(L'utilisateur de test généré est `admin@genoa.com` / `admin123`)*.
+```
 
-### 2️⃣ Lancement du Frontend (Application Mobile Expo)
-\`\`\`bash
+### 2️⃣ Initialisation de l'Application Mobile (Frontend Expo)
+Ouvrez un nouveau terminal dédié :
+```bash
 cd frontend
 npm install
 
-# Lancer le serveur Expo
+# Démarrer le packager
 npx expo start
-\`\`\`
-Scannez le QR-Code avec l'application "Expo Go" (sur iOS ou Android) ou ouvrez l'émulateur avec `i` pour iOS / `a` pour Android.
+```
+💡 *Note : Appuyez sur la touche `w` du terminal pour l'ouvrir nativement (et parfaire le rendu SVG D3.js) sur navigateur Web, ou testez-le sur iOS/Android avec Expo Go.*
 
 ---
-**Développé par Mehdi.**
+
+## 🔑 Identifiants Administrateur de Test
+Si vous avez lancé `node seed.js` au préalable, l'utilisateur d'amorçage ayant les droits administrateurs sera créé ainsi :
+- **Email** : `admin@genoa.com`
+- **Mot de passe** : `admin123`

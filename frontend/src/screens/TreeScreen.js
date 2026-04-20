@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, StyleSheet, Text, Button } from 'react-native';
+import { View, StyleSheet, Text, Button, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
@@ -17,12 +17,9 @@ export default function TreeScreen({ navigation }) {
       // Pour faire très simple sans bibliothèques lourdes D3 natives sur le webview :
       // On récupère les membres et on crée un code JS/HTML qui inclut D3.js via un CDN
       const membersRes = await api.get('/members');
+      const relationsRes = await api.get('/relations');
       const members = membersRes.data;
-      
-      const relationsRes = await api.get('/relations/all'); // We will assume an endpoint /all exists or we simulate it
-      // actually we only created /parent-child for POST, but we can return parents in /members since we populated it!
-      // In Member controller, we don't return relations in getAllMembers, let's fix it or just send it directly if not yet implemented.
-      
+      const { parentChildren } = relationsRes.data || { parentChildren: [] };
       const treeHtml = `
       <!DOCTYPE html>
       <html>
@@ -41,9 +38,10 @@ export default function TreeScreen({ navigation }) {
           <script>
             // Data injection from React Native
             const members = ${JSON.stringify(members)};
+            const parentChildren = ${JSON.stringify(parentChildren)};
             
-            // Simple rendering for now (listing nodes as a demo of WebView working)
-            // Real D3 tree would require hierarchical data layout
+            const nodes = members.map(m => ({ id: m.id, name: m.firstName + ' ' + m.lastName }));
+            const links = parentChildren.map(r => ({ source: r.parentId, target: r.childId }));
             
             const svg = d3.select("#chart").append("svg")
                 .attr("width", 1000)
@@ -52,17 +50,60 @@ export default function TreeScreen({ navigation }) {
                     svg.attr("transform", event.transform)
                 }))
                 .append("g");
-
-            // Dummy graph rendering logic
-            members.forEach((m, idx) => {
-              const node = svg.append("g")
-                .attr("transform", "translate(" + (50) + "," + (idx * 60 + 50) + ")");
-              node.append("rect")
-                .attr("width", 150).attr("height", 40);
-              node.append("text")
-                .attr("x", 10).attr("y", 25)
-                .text(m.firstName + ' ' + m.lastName);
+                
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+                .force("charge", d3.forceManyBody().strength(-400))
+                .force("center", d3.forceCenter(500, 400));
+                
+            const link = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link");
+                
+            const node = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+                    
+            node.append("rect")
+                .attr("width", 120).attr("height", 36)
+                .attr("x", -60).attr("y", -18);
+                
+            node.append("text")
+                .attr("dy", 4)
+                .attr("text-anchor", "middle")
+                .text(d => d.name);
+                
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                    
+                node.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
             });
+            
+            function dragstarted(event, d) {
+              if (!event.active) simulation.alphaTarget(0.3).restart();
+              d.fx = d.x; d.fy = d.y;
+            }
+            function dragged(event, d) {
+              d.fx = event.x; d.fy = event.y;
+            }
+            function dragended(event, d) {
+              if (!event.active) simulation.alphaTarget(0);
+              d.fx = null; d.fy = null;
+            }
           </script>
       </body>
       </html>
@@ -79,14 +120,18 @@ export default function TreeScreen({ navigation }) {
          <Button title="Ajouter Membre" onPress={() => navigation.navigate('MemberForm')} />
        </View>
        {htmlContent ? (
-         <WebView
-           originWhitelist={['*']}
-           source={{ html: htmlContent }}
-           style={{ flex: 1 }}
-           scalesPageToFit={false}
-           javaScriptEnabled={true}
-           showsVerticalScrollIndicator={false}
-         />
+         Platform.OS === 'web' ? (
+           <iframe srcDoc={htmlContent} style={{ flex: 1, border: 'none', width: '100%', height: '100vh' }} />
+         ) : (
+           <WebView
+             originWhitelist={['*']}
+             source={{ html: htmlContent }}
+             style={{ flex: 1 }}
+             scalesPageToFit={false}
+             javaScriptEnabled={true}
+             showsVerticalScrollIndicator={false}
+           />
+         )
        ) : (
          <Text>Loading Tree...</Text>
        )}
